@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure DOCX Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 20px auto;
+        }
+        .button-group {
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+        }
+        .security-notice {
+            margin-top: 30px;
+            background-color: #ffebcc;
+            padding: 20px;
+            border: 1px solid #ffcc80;
+        }
+        .security-notice h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>DOCX Viewer</h1>
+
+    <div class="container">
+        <input type="file" id="fileInput" accept=".docx" />
+        
+        <div class="button-group">
+            <button id="convertToHtml">Convert to HTML</button>
+            <button id="convertToText">Convert to Text</button>
+        </div>
+        
+        <div id="output">Select a DOCX file and choose how to view its content.</div>
+
+        <div class="security-notice">
+            <h2>Security Considerations</h2>
+            <ul>
+                <li>This viewer prevents the execution of macros and other embedded code commonly found in malicious DOCX files.</li>
+                <li><strong>Protected:</strong> Macros, executable scripts, and other active content will not run. This reduces the risk of common DOCX malware.</li>
+                <li><strong>Not Protected:</strong> If the DOCX file contains malicious links or attempts to inject unsafe HTML, those might still pose risks.</li>
+                <li>HTML output is sanitized using DOMPurify to help remove potential harmful content. However, be cautious when clicking links that appear in the output.</li>
+                <li>Viewing the file as plain text is the safest option, as it strips all formatting and content.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Include the Mammoth.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <!-- Include the DOMPurify library for sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.4/purify.min.js"></script>
+    
+    <script>
+        const fileInput = document.getElementById("fileInput");
+        const output = document.getElementById("output");
+
+        // Handle Convert to HTML
+        document.getElementById("convertToHtml").addEventListener("click", function() {
+            const file = fileInput.files[0];
+
+            if (file && file.name.endsWith(".docx")) {
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    const arrayBuffer = reader.result;
+
+                    mammoth.convertToHtml({ arrayBuffer: arrayBuffer })
+                        .then(function(result) {
+                            // Sanitize the HTML content using DOMPurify
+                            const sanitizedHtml = DOMPurify.sanitize(result.value);
+                            output.innerHTML = sanitizedHtml;
+                        })
+                        .catch(function(err) {
+                            alert("Error converting the file: " + err.message);
+                        });
+                };
+
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert("Please upload a valid .docx file.");
+            }
+        });
+
+        // Handle Convert to Text
+        document.getElementById("convertToText").addEventListener("click", function() {
+            const file = fileInput.files[0];
+
+            if (file && file.name.endsWith(".docx")) {
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    const arrayBuffer = reader.result;
+
+                    mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+                        .then(function(result) {
+                            output.textContent = result.value; // Display as plain text
+                        })
+                        .catch(function(err) {
+                            alert("Error converting the file: " + err.message);
+                        });
+                };
+
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert("Please upload a valid .docx file.");
+            }
+        });
+    </script>
+
+</body>
+</html>
